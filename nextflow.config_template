@@ -1,0 +1,18 @@
+params {
+    pgs = <list of PGS Score IDs, e.g. ['PGS000001','PGS000048']>
+    genebuild = <target genebuild, e.g. 'GRCh38'>
+    var_file_name = <variant file name, e.g. 'vars'>
+    coord_file_name = <file storing all the variant locations to be used in the pgs-harmonizer, e.g. 'variant_locations.txt'>
+    new_coord_file_name = <temporary file storing all the new variant locations, e.g. 'new_variant_locations.txt'>
+    loc_pipeline = <path to the 'scoring_files_pipeline' directory>
+    loc_validator = <path to the 'sum-stats-formatter' (scoring file validator) directory>
+    loc_harmonizer = <path to the 'pgs-harmonizer' directory>
+    work_dir = <path to the working data directory, e.g. '/homes/myuser/harmonisation/data/'
+    loc_varlist_dir = <path to the directory where the list of variants will be stored, e.g. '${params.work_dir}/variants/'>
+    loc_coord_dir = <path to the directory where the variant location files are stored, e.g. '${params.work_dir}/locations/'>
+    loc_score_dir = <path to the directory where the scoring files are stored, e.g. '${params.work_dir}/scorefiles/'>
+    loc_logs = <path to the directory where the log files will be stored, e.g. '${params.work_dir}/logs/'>
+    loc_coord_file = <path to the file storing the variant locations (that will be used by the pgs-harmonizer), e.g. '${loc_coord_dir}/${coord_file_name}'>
+    loc_hmoutput = <path to the directory where the harmonized scoring files will be stored, e.g. '${params.work_dir}/PGS_HmPOS/'>
+    loc_vcfs = <path to the 'Ensembl VCF' directory>
+}
