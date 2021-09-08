@@ -18,9 +18,9 @@ process get_variants_list {
   """
   python $params.loc_pipeline/variants_list.py \
     --scores_ids $pgs_ids \
-    --scores_dir $params.work_dir/scorefiles/ \
-    --var_file $params.work_dir/variants/${params.var_file_name}.txt \
-    --coord_file $params.work_dir/locations/$params.coord_file_name
+    --scores_dir ${params.loc_score_dir} \
+    --var_file $params.loc_varlist_dir/${params.var_file_name}.txt \
+    --coord_file $params.loc_coord_dir/$params.coord_file_name
   """
 }
 
@@ -35,7 +35,7 @@ process var2location {
   script:
   """
   perl $params.loc_harmonizer/EnsemblMappings/var2location_3738.pl $file_name $params.work_dir
-  cp $params.work_dir/${file_name}.out $params.work_dir/locations/${params.new_coord_file_name}
+  cp $params.work_dir/${file_name}.out $params.loc_coord_dir/${params.new_coord_file_name}
   """
 }
 
@@ -44,11 +44,14 @@ process update_varlocation_file {
   input:
     val new_file_name
 
+  output:
+    val params.coord_file_name
+
   script:
   """
   python $params.loc_pipeline/update_variant_location_file.py \
-    --loc_file $params.work_dir/locations/${new_file_name} \
-    --coord_file $params.work_dir/locations/${params.coord_file_name}
+    --loc_file $params.loc_coord_dir/${new_file_name} \
+    --coord_file $params.loc_coord_dir/${params.coord_file_name}
   """
 }
 
@@ -56,16 +59,16 @@ process update_varlocation_file {
 process validate_scoring_file {
   input:
     val pgs_id
+    val params.coord_file_name
 
   output:
     val pgs_id
 
   script:
   """
-  rm -f $params.work_dir/logs/${pgs_id}_log.txt \
+  rm -f $params.loc_logs_dir/${pgs_id}_log.txt
   python $params.loc_validator/run_validator.py \
-    -f $params.work_dir/scorefiles/${pgs_id}.txt.gz \
-    --log_dir $params.work_dir/logs/
+    -f $params.loc_score_dir/${pgs_id}.txt.gz --log_dir $params.loc_logs_dir/
   """
 }
 
@@ -79,7 +82,7 @@ process validation_result {
 
   script:
   """
-  grep -m 1 "File is valid" $params.work_dir/logs/${pgs_id}_log.txt | wc -l
+  grep -m 1 "File is valid" $params.loc_logs_dir/${pgs_id}_log.txt | wc -l
   """
 }
 
@@ -97,7 +100,11 @@ process HmPOS {
 
   script:
   """
-  python $params.loc_harmonizer/Harmonize.py HmPOS $pgs_id $params.genebuild -loc_files $params.loc_score_dir -loc_hmoutput $params.loc_hmoutput --gzip
+  python $params.loc_harmonizer/Harmonize.py HmPOS $pgs_id $params.genebuild \
+    -loc_files $params.loc_score_dir \
+    -loc_hmoutput $params.loc_hmoutput \
+    --var2location $params.loc_coord_dir/$params.coord_file_name \
+    --gzip
   """
 }
 
@@ -108,7 +115,10 @@ process HmVCF {
 
   script:
   """
-  python $params.loc_harmonizer/Harmonize.py HmVCF $pgs_id $params.genebuild -loc_files $params.loc_hmoutput -loc_hmoutput $params.loc_hmoutput -loc_vcfs $params.loc_vcfs
+  python $params.loc_harmonizer/Harmonize.py HmVCF $pgs_id $params.genebuild \
+    -loc_files $params.loc_hmoutput \
+    -loc_hmoutput $params.loc_hmoutput \
+    -loc_vcfs $params.loc_vcfs
   """
 }
 
@@ -122,10 +132,10 @@ workflow {
   update_varlocation_file(var2location.out)
 
   // Validate scoring files
-  validate_scoring_file(data)
+  validate_scoring_file(data,update_varlocation_file.out)
   validation_result(validate_scoring_file.out)
 
   // Harmonise scoring files
-  HmPOS(validate_scoring_file.out, validation_result.out)
+  HmPOS(data, validation_result.out)
   HmVCF(HmPOS.out)
 }

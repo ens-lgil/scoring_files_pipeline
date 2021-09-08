@@ -4,44 +4,12 @@ import pandas as pd
 import gzip
 
 
-remap_header = {
-    'PGS ID': 'pgs_id',
-    'PGS Name': 'pgs_name',
-    'Reported Trait': 'trait_reported',
-    'Original Genome Build': 'genome_build',
-    'Number of Variants': 'variants_number',
-    'PGP ID': 'pgp_id',
-    'Citation': 'citation',
-    'LICENSE': 'pgs_license',
-    # Harmonization related
-    'HmPOS Build': 'HmPOS_build',
-    'HmPOS Date':'HmPOS_date',
-    'HmVCF Reference': 'HmVCF_ref',
-    'HmVCF Date': 'HmVCF_date'
-} # ToDo remove once Scoring File headers are fixed
-
-
 def read_scorefile(loc_scorefile):
     """Loads PGS Catalog Scoring file and parses the header into a dictionary"""
     if loc_scorefile.endswith('.gz'):
         f = gzip.open(loc_scorefile,'rt')
     else:
         f = open(loc_scorefile, 'rt')
-
-    header = {}
-    lastline = '#'
-    while lastline.startswith('#'):
-        lastline = f.readline()
-        line = lastline.strip()
-        if line.startswith('#'):
-            if '=' in line:
-                line = line[1:].split('=')
-                field, val = [x.strip() for x in line]
-                header[remap_header[field]] = val # ToDo change once Scoring File headers are fixed
-    f.close()
-
-    if ('genome_build' in header) and (header['genome_build'] == 'NR'):
-        header['genome_build'] = None
 
     df_scoring = pd.read_table(loc_scorefile, float_precision='round_trip', comment='#',
                                dtype = {'chr_position' : 'object',
@@ -53,11 +21,7 @@ def read_scorefile(loc_scorefile):
     if 'reference_allele' in df_scoring.columns:
         df_scoring = df_scoring.rename(columns={"reference_allele": "other_allele"})
 
-    # for poscol in ['chr_position', 'hm_pos']:
-    #     if poscol in df_scoring.columns:
-    #         df_scoring.loc[df_scoring[poscol].isnull() == False, poscol] = [conv2int(x) for x in df_scoring.loc[df_scoring[poscol].isnull() == False, poscol]]
-
-    return(header, df_scoring)
+    return df_scoring
 
 
 def clean_rsIDs(raw_rslist):
@@ -127,10 +91,9 @@ def main():
             print("File '"+scorefile+"' can't be found")
             exit(1)
         
-        header, df_scoring = read_scorefile(scorefile)
+        # header, df_scoring = read_scorefile(scorefile)
+        df_scoring = read_scorefile(scorefile)
         rsIDs = clean_rsIDs(list(df_scoring['rsID']))
-
-        # print(f'> {score_id}: {len(rsIDs)}')
 
         for rsID in rsIDs:
             if not rsID in var_list  and not rsID in existing_rsIDs_with_coords:
