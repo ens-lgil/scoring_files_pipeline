@@ -110,6 +110,7 @@ process HmPOS {
 
 
 process HmVCF {
+  label 'retry_increasing_mem'
   input:
     val pgs_id
 

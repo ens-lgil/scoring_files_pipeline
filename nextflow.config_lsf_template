@@ -20,4 +20,9 @@ params {
 process {
     queue = 'production-rh74'
     executor = 'lsf'
+    withLabel: retry_increasing_mem {
+        errorStrategy = 'retry'
+        memory = {1.GB * task.attempt}
+        maxRetries = { task.exitStatus in [130,140] ? 6 : 2 }
+    }
 }

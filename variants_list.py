@@ -93,11 +93,14 @@ def main():
         
         # header, df_scoring = read_scorefile(scorefile)
         df_scoring = read_scorefile(scorefile)
-        rsIDs = clean_rsIDs(list(df_scoring['rsID']))
+        if 'rsID' in df_scoring:
+            rsIDs = clean_rsIDs(list(df_scoring['rsID']))
 
-        for rsID in rsIDs:
-            if not rsID in var_list  and not rsID in existing_rsIDs_with_coords:
-                var_list.add(rsID)
+            for rsID in rsIDs:
+                if not rsID in var_list  and not rsID in existing_rsIDs_with_coords:
+                    var_list.add(rsID)
+        else:
+            print(f'- {score_id}: missing rsID for {df_scoring}')
     
     print(f'Variants: {len(var_list)}')
 
